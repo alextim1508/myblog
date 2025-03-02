@@ -1,6 +1,7 @@
 package com.alextim.myblog.service;
 
 import com.alextim.myblog.model.Comment;
+import com.alextim.myblog.model.Post;
 import com.alextim.myblog.repository.CommentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,11 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public Comment save(Comment comment) {
         return repository.save(comment);
+    }
+
+    @Override
+    public int countByPost(Post post) {
+        return repository.countByPost(post);
     }
 
     @Override

@@ -62,4 +62,8 @@ public class TagServiceImpl implements TagService {
     public void delete(long id) {
         repository.deleteById(id);
     }
+
+    public static String tagsToString(Set<Tag> tags) {
+        return tags != null ? tags.stream().map(Tag::getTitle).collect(Collectors.joining(", ")) : null;
+    }
 }
