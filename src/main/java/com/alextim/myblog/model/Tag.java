@@ -9,6 +9,7 @@ import java.util.Set;
 @Entity
 @Data
 @NoArgsConstructor
+@ToString(exclude = {"posts"})
 @EqualsAndHashCode(of = {"title"})
 public class Tag {
 

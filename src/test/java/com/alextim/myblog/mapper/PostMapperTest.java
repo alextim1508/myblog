@@ -41,7 +41,7 @@ public class PostMapperTest {
 
     @Test
     void toModelTest() {
-        Post post = postMapper.toModel(new NewPostDto("title", "content", "tag1, tag2"));
+        Post post = postMapper.toModel(new NewPostDto("title", "content", "url", "tag1, tag2"));
         Assertions.assertEquals(2, post.getTags().size());
         Assertions.assertTrue(post.getTags().contains(new Tag("tag1")));
         Assertions.assertTrue(post.getTags().contains(new Tag("tag2")));

@@ -13,6 +13,8 @@ public class PostDto {
 
     public String content;
 
+    public String imageUrl;
+
     public int likeCount;
 
     public List<CommentDto> comments;

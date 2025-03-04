@@ -11,6 +11,8 @@ public class PostShortDto {
 
     public String content;
 
+    public String imageUrl;
+
     public int likeCount;
 
     public int commentsSize;
