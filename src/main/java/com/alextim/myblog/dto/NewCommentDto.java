@@ -2,12 +2,14 @@ package com.alextim.myblog.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class NewCommentDto {
 
-    private String content;
+    public String content;
 
-    private Long postId;
+    public Long postId;
 }
