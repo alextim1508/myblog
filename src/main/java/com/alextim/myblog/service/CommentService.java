@@ -9,6 +9,8 @@ public interface CommentService {
 
     Comment save(Comment comment);
 
+    Comment findById(long id);
+
     int countByPost(Post post);
 
     Page<Comment> findAll(int page, int size);

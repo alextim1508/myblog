@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,10 +23,13 @@ public class PostServiceImpl implements PostService {
         return repository.save(post);
     }
 
+    @Transactional
     @Override
     public Post findById(long id) {
-        return repository.findById(id).orElseThrow(() ->
+        Post post = repository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Post with ID " + id + " does not exist"));
+        int forLoading = post.getComments().size();
+        return post;
     }
 
     @Override
