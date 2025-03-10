@@ -3,10 +3,8 @@ package com.alextim.myblog.service;
 import com.alextim.myblog.model.Comment;
 import com.alextim.myblog.model.Post;
 import com.alextim.myblog.repository.CommentRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,7 +21,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public Comment findById(long id) {
         return repository.findById(id).orElseThrow(() ->
-                new EntityNotFoundException("Comment with ID " + id + " does not exist"));
+                new RuntimeException("Comment with ID " + id + " does not exist"));
     }
 
     @Override
@@ -33,7 +31,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public Page<Comment> findAll(int page, int size) {
-        return repository.findAll(PageRequest.of(page, size));
+        return repository.findAll(page, size);
     }
 
     @Override

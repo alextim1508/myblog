@@ -3,7 +3,6 @@ package com.alextim.myblog.service;
 import com.alextim.myblog.model.Post;
 import com.alextim.myblog.model.Tag;
 import com.alextim.myblog.repository.PostRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,7 +26,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public Post findById(long id) {
         Post post = repository.findById(id).orElseThrow(() ->
-                new EntityNotFoundException("Post with ID " + id + " does not exist"));
+                new RuntimeException("Post with ID " + id + " does not exist"));
         int forLoading = post.getComments().size();
         return post;
     }
@@ -45,7 +44,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public Post like(long id) {
         Post post = repository.findById(id).orElseThrow(() ->
-                new EntityNotFoundException("Post with ID " + id + " does not exist"));
+                new RuntimeException("Post with ID " + id + " does not exist"));
         post.setLikeCount(post.getLikeCount() + 1);
         return repository.save(post);
     }
