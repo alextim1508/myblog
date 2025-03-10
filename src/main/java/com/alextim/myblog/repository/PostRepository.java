@@ -1,17 +1,17 @@
 package com.alextim.myblog.repository;
 
 import com.alextim.myblog.model.Post;
-import com.alextim.myblog.model.Tag;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
-public interface PostRepository extends JpaRepository<Post, Long> {
+public interface PostRepository extends AbstractRepository<Post> {
 
-    Page<Post> findByTags(List<Tag> tags, Pageable pageable);
+    Post save(Post post);
+
+    int update(Post post);
+
+    List<Post> findByTagIds(List<Long> tagIds, int limit, int offset);
+
+    List<Post> findAllPostsWithTags(int limit, int offset);
 }
 

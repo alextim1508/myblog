@@ -1,8 +1,8 @@
 package com.alextim.myblog.service;
 
 import com.alextim.myblog.model.Comment;
-import com.alextim.myblog.model.Post;
-import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 
 public interface CommentService {
@@ -11,9 +11,11 @@ public interface CommentService {
 
     Comment findById(long id);
 
-    int countByPost(Post post);
+    int countByPostId(long postId);
 
-    Page<Comment> findAll(int page, int size);
+    List<Comment> findAll(int page, int size);
 
-    void delete(long id);
+    void deleteByPostId(long id);
+
+    void deleteById(long id);
 }

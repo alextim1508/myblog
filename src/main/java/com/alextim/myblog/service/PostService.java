@@ -1,8 +1,8 @@
 package com.alextim.myblog.service;
 
 import com.alextim.myblog.model.Post;
-import com.alextim.myblog.model.Tag;
-import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public interface PostService {
 
@@ -10,9 +10,9 @@ public interface PostService {
 
     Post findById(long id);
 
-    Page<Post> findAll(int page, int size);
+    List<Post> findAll(int page, int size);
 
-    Page<Post> findByTag(Tag tag, int page, int size);
+    List<Post> findByTag(Long tagId, int page, int size);
 
     Post like(long id);
 

@@ -1,19 +1,24 @@
 package com.alextim.myblog.repository;
 
 import com.alextim.myblog.model.Tag;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@Repository
-public interface TagRepository extends CrudRepository<Tag, Long> {
 
-    List<Tag> findAll();
+public interface TagRepository extends AbstractRepository<Tag> {
+
+    Tag save(Tag tag);
+
+    void saveRelationship(Long tagId, Long postId);
+
+    Set<Tag> findTagsByPostId(Long postId);
 
     Optional<Tag> findTagByTitle(String content);
 
     Set<Tag> findTagsByTitleIn(Set<String> titles);
+
+    void deleteRelationshipByTagId(Long id);
+
+    void deleteRelationships();
 }

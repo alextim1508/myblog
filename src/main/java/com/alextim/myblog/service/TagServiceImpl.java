@@ -3,6 +3,8 @@ package com.alextim.myblog.service;
 import com.alextim.myblog.model.Tag;
 import com.alextim.myblog.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -11,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TagServiceImpl implements TagService {
@@ -18,8 +21,16 @@ public class TagServiceImpl implements TagService {
     private final TagRepository repository;
 
     @Override
-    public Tag save(Tag tag) {
-        return repository.save(tag);
+    public Tag save(Tag tag, Long postId) {
+        if(tag.getId() == null)
+            tag = repository.save(tag);
+
+        try {
+            repository.saveRelationship(tag.getId(), postId);
+        } catch (DuplicateKeyException e) {
+            log.warn("relationship post_tag already exists. post_id: {} tag_id: {}", postId, tag.getId());
+        }
+        return tag;
     }
 
     @Override
@@ -35,8 +46,7 @@ public class TagServiceImpl implements TagService {
                 .map(Tag::new)
                 .filter(tag -> !tags.contains(tag))
                 .forEach(tag -> {
-                    Tag saved = repository.save(tag);
-                    tags.add(saved);
+                    tags.add(repository.save(tag));
                 });
 
         return tags;
@@ -58,8 +68,14 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public void delete(long id) {
+    public void deleteById(long id) {
+        repository.deleteRelationshipByTagId(id);
         repository.deleteById(id);
+    }
+
+    @Override
+    public void deleteRelationshipByTagId(long id) {
+        repository.deleteRelationshipByTagId(id);
     }
 
     public static String tagsToString(Set<Tag> tags) {

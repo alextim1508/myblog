@@ -1,16 +1,15 @@
 package com.alextim.myblog.service;
 
+import com.alextim.myblog.exception.ClientException;
 import com.alextim.myblog.model.Post;
-import com.alextim.myblog.model.Tag;
 import com.alextim.myblog.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
@@ -19,26 +18,34 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post save(Post post) {
-        return repository.save(post);
+        if(post.getId() == null) {
+            return repository.save(post);
+        } else {
+            int updatedRowCount = repository.update(post);
+
+            if(updatedRowCount != 1)
+                throw new ClientException("Update post exception. updatedRowCount: " + updatedRowCount);
+
+            return post;
+        }
     }
 
-    @Transactional
     @Override
     public Post findById(long id) {
-        Post post = repository.findById(id).orElseThrow(() ->
-                new RuntimeException("Post with ID " + id + " does not exist"));
-        int forLoading = post.getComments().size();
-        return post;
+        return repository.findById(id).orElseThrow(() ->
+                new ClientException("Post with ID " + id + " does not exist"));
     }
 
     @Override
-    public Page<Post> findAll(int page, int size) {
-        return repository.findAll(PageRequest.of(page, size));
+    public List<Post> findAll(int page, int size) {
+        log.info("find all post. Page: {} Size: {}", page, size);
+        return repository.findAllPostsWithTags(size, page * size);
     }
 
     @Override
-    public Page<Post> findByTag(Tag tag, int page, int size) {
-        return repository.findByTags(List.of(tag), PageRequest.of(page, size));
+    public List<Post> findByTag(Long tagId, int page, int size) {
+        log.info("find all post by tagId. TagId: {} Page: {} Size: {}", tagId, page, size);
+        return repository.findByTagIds(List.of(tagId), size, page*size);
     }
 
     @Override
@@ -46,13 +53,18 @@ public class PostServiceImpl implements PostService {
         Post post = repository.findById(id).orElseThrow(() ->
                 new RuntimeException("Post with ID " + id + " does not exist"));
         post.setLikeCount(post.getLikeCount() + 1);
-        return repository.save(post);
+
+        int updatedRowCount = repository.update(post);
+
+        if(updatedRowCount != 1)
+            throw new ClientException("Update post like exception. updatedRowCount: " + updatedRowCount);
+
+        return post;
     }
 
     @Override
     public void delete(long id) {
         repository.deleteById(id);
     }
-
 }
 
