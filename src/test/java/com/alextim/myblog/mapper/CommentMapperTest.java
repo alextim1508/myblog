@@ -13,9 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
-@Transactional
 @WebAppConfiguration
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {AppTestConfig.class})
@@ -34,13 +32,14 @@ public class CommentMapperTest {
         Comment comment = commentMapper.toModel(new NewCommentDto("comment", savedPost.getId()));
 
         Assertions.assertEquals("comment", comment.getContent());
-        Assertions.assertEquals(savedPost, comment.getPost());
+        Assertions.assertEquals(savedPost.getId(), comment.getPostId());
     }
 
     @Test
     public void toDto_shouldMapToDto() {
-        Comment comment = new Comment("content", new Post("title", "content"));
-        comment.setId(1);
+        Post savedPost = postService.save(new Post("title", "content"));
+        Comment comment = new Comment("content", savedPost.getId());
+        comment.setId(1L);
 
         CommentDto commentDto = commentMapper.toDto(comment);
 

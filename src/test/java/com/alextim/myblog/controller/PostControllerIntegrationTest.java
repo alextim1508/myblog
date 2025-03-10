@@ -4,6 +4,10 @@ import com.alextim.myblog.config.AppTestConfig;
 import com.alextim.myblog.model.Comment;
 import com.alextim.myblog.model.Post;
 import com.alextim.myblog.model.Tag;
+import com.alextim.myblog.repository.CommentRepository;
+import com.alextim.myblog.repository.PostRepository;
+import com.alextim.myblog.repository.TagRepository;
+import com.alextim.myblog.service.CommentService;
 import com.alextim.myblog.service.PostService;
 import com.alextim.myblog.service.TagService;
 import org.junit.jupiter.api.Assertions;
@@ -16,7 +20,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
@@ -27,7 +30,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebAppConfiguration
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {AppTestConfig.class})
-@Transactional
 class PostControllerIntegrationTest {
 
     @Autowired
@@ -39,11 +41,25 @@ class PostControllerIntegrationTest {
     @Autowired
     private TagService tagService;
 
+    @Autowired
+    private CommentService commentService;
+
     private MockMvc mockMvc;
+
+    @Autowired
+    PostRepository postRepository;
+    @Autowired
+    CommentRepository commentRepository;
+    @Autowired
+    TagRepository tagRepository;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        commentRepository.delete();
+        postRepository.delete();
+        tagRepository.deleteRelationships();
+        tagRepository.delete();
     }
 
     @Test
@@ -56,7 +72,7 @@ class PostControllerIntegrationTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/post"));
 
-        List<Post> posts = postService.findAll(0, 10).getContent();
+        List<Post> posts = postService.findAll(0, 10);
         Assertions.assertEquals(1, posts.size());
 
         Assertions.assertEquals("title", posts.get(0).getTitle());
@@ -76,7 +92,7 @@ class PostControllerIntegrationTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/post"));
 
-        List<Post> posts = postService.findAll(0, 10).getContent();
+        List<Post> posts = postService.findAll(0, 10);
         Assertions.assertEquals(1, posts.size());
         Assertions.assertEquals("title", posts.get(0).getTitle());
         Assertions.assertEquals("content", posts.get(0).getContent());
@@ -107,17 +123,12 @@ class PostControllerIntegrationTest {
 
     @Test
     void getPost_shouldReturnHtmlWithPostsByTag() throws Exception {
-        Tag tag1 = tagService.save(new Tag("tag1"));
-        Tag tag2 = tagService.save(new Tag("tag2"));
+        Post savedPost1 = postService.save(new Post("title1", "content1"));
+        Tag savedTag1 = tagService.save(new Tag("tag1"), savedPost1.getId());
+        tagService.save(new Tag("tag2"), savedPost1.getId());
 
-        Post post1 = new Post("title1", "content1");
-        tag1.addPost(post1);
-        tag2.addPost(post1);
-        postService.save(post1);
-
-        Post post2 = new Post("title2", "content2");
-        tag1.addPost(post2);
-        postService.save(post2);
+        Post savedPost2 = postService.save(new Post("title2", "content2"));
+        tagService.save(savedTag1, savedPost2.getId());
 
         mockMvc.perform(get("/post").param("tag", "tag1"))
                 .andExpect(status().isOk())
@@ -133,18 +144,15 @@ class PostControllerIntegrationTest {
 
     @Test
     void getPost_shouldReturnHtmlWithPostById() throws Exception {
-        Tag tag1 = tagService.save(new Tag("tag1"));
-        Tag tag2 = tagService.save(new Tag("tag2"));
+        Post savedPost1 = postService.save(new Post("title1", "content1"));
 
-        Post post = new Post("title", "content");
-        post.getComments().add(new Comment("comment1", post));
-        post.getComments().add(new Comment("comment2", post));
-        tag1.addPost(post);
-        tag2.addPost(post);
+        tagService.save(new Tag("tag1"), savedPost1.getId());
+        tagService.save(new Tag("tag2"), savedPost1.getId());
 
-        Post savedPost = postService.save(post);
+        commentService.save(new Comment("comment1", savedPost1.getId()));
+        commentService.save(new Comment("comment2", savedPost1.getId()));
 
-        mockMvc.perform(get("/post/" + savedPost.getId()))
+        mockMvc.perform(get("/post/" + savedPost1.getId()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("text/html;charset=UTF-8"))
                 .andExpect(view().name("post"))
@@ -155,10 +163,21 @@ class PostControllerIntegrationTest {
     void delete_shouldRemovePostFromDatabaseAndRedirect() throws Exception {
         Post savedPost = postService.save(new Post("title1", "content1"));
 
+        tagService.save(new Tag("tag1"), savedPost.getId());
+        tagService.save(new Tag("tag2"), savedPost.getId());
+
+        commentService.save(new Comment("comment1", savedPost.getId()));
+        commentService.save(new Comment("comment2", savedPost.getId()));
+
         mockMvc.perform(post("/post/" + savedPost
                         .getId()).param("_method", "delete"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/post"));
 
+        List<Tag> tags = tagService.findAll();
+        Assertions.assertEquals(2, tags.size());
+
+        List<Comment> comments = commentService.findAll(0, 10);
+        Assertions.assertEquals(0, comments.size());
     }
 }

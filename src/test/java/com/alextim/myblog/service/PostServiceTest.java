@@ -58,15 +58,15 @@ public class PostServiceTest {
     }
 
     @Test
-    public void findAll_shouldCallFindAll() {
+    public void findAll_shouldCallFindAllPostsWithTags() {
         Post post1 = new Post("title1", "content");
         Post post2 = new Post("title2", "content");
 
-        when(repository.findAll(any(PageRequest.class))).thenReturn(new PageImpl<>(List.of(post1, post2)));
+        when(repository.findAllPostsWithTags(anyInt(), anyInt())).thenReturn(List.of(post1, post2));
 
-        List<Post> posts = service.findAll(0, 10).getContent();
+        List<Post> posts = service.findAll(0, 10);
 
-        verify(repository).findAll(PageRequest.of(0, 10));
+        verify(repository).findAllPostsWithTags(10, 0);
         Assertions.assertEquals(posts, List.of(post1, post2));
     }
 
@@ -75,11 +75,11 @@ public class PostServiceTest {
         Post post1 = new Post("title1", "content");
         Post post2 = new Post("title2", "content");
 
-        when(repository.findByTags(anyList(), any(PageRequest.class))).thenReturn(new PageImpl<>(List.of(post1, post2)));
+        when(repository.findByTagIds(anyList(), anyInt(), anyInt())).thenReturn(List.of(post1, post2));
 
-        List<Post> posts = service.findByTag(new Tag("tag"), 0, 10).getContent();
+        List<Post> posts = service.findByTag(1L, 0, 10);
 
-        verify(repository).findByTags(List.of(new Tag("tag")), PageRequest.of(0, 10));
+        verify(repository).findByTagIds(List.of(1L), 10, 0);
         Assertions.assertEquals(posts, List.of(post1, post2));
     }
 
@@ -95,7 +95,7 @@ public class PostServiceTest {
         Post likedPost = service.like(1L);
 
         verify(repository).findById(1L);
-        verify(repository).save(post);
+        verify(repository).update(post);
         Assertions.assertEquals(3, likedPost.getLikeCount());
     }
 

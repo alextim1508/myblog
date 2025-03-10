@@ -7,21 +7,23 @@ import com.alextim.myblog.dto.PostShortDto;
 import com.alextim.myblog.model.Comment;
 import com.alextim.myblog.model.Post;
 import com.alextim.myblog.model.Tag;
+import com.alextim.myblog.repository.CommentRepository;
+import com.alextim.myblog.repository.PostRepository;
+import com.alextim.myblog.repository.TagRepository;
 import com.alextim.myblog.service.CommentService;
 import com.alextim.myblog.service.PostService;
 import com.alextim.myblog.service.TagService;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Transactional
 @WebAppConfiguration
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {AppTestConfig.class})
@@ -39,34 +41,47 @@ public class PostMapperTest {
     @Autowired
     CommentService commentService;
 
+    @Autowired
+    PostRepository postRepository;
+    @Autowired
+    CommentRepository commentRepository;
+    @Autowired
+    TagRepository tagRepository;
+
+    @BeforeEach
+    void setUp() {
+        commentRepository.delete();
+        postRepository.delete();
+        tagRepository.deleteRelationships();
+        tagRepository.delete();
+    }
+
     @Test
     void toModelTest() {
         Post post = postMapper.toModel(new NewPostDto("title", "content", "url", "tag1, tag2"));
         Assertions.assertEquals(2, post.getTags().size());
         Assertions.assertTrue(post.getTags().contains(new Tag("tag1")));
         Assertions.assertTrue(post.getTags().contains(new Tag("tag2")));
-
     }
 
     @Test
     void toShortDto_shouldMapToShortDto() {
-        Post post = new Post("title", "content");
-        post.setComments(List.of(new Comment("comment1", post), new Comment("comment2", post)));
-        postService.save(post);
+        Post savedPost = postService.save(new Post("title", "content"));
+
+        commentService.save(new Comment("comment1", savedPost.getId()));
+        commentService.save(new Comment("comment2", savedPost.getId()));
 
         Tag tag1 = new Tag("tag1");
-        tag1.addPost(post);
-        tagService.save(tag1);
+        tagService.save(tag1, savedPost.getId());
 
         Tag tag2 = new Tag("tag2");
-        tag2.addPost(post);
-        tagService.save(tag2);
+        tagService.save(tag2, savedPost.getId());
 
         Tag tag3 = new Tag("tag3");
-        tag3.addPost(post);
-        tagService.save(tag3);
+        tagService.save(tag3, savedPost.getId());
 
-        PostShortDto postShortDto = postMapper.toShortDto(post);
+        PostShortDto postShortDto = postMapper.toShortDto(postService.findById(savedPost.getId()));
+
         Assertions.assertEquals(2, postShortDto.commentsSize);
         Assertions.assertTrue(postShortDto.tags.contains("tag1"));
         Assertions.assertTrue(postShortDto.tags.contains("tag2"));
@@ -76,20 +91,18 @@ public class PostMapperTest {
 
     @Test
     void toDto_shouldMapToDto() {
-        Post post = new Post("title", "content");
-        post.setComments(List.of(new Comment("comment", post)));
-        postService.save(post);
+        Post savedPost = postService.save(new Post("title", "content"));
+        commentService.save(new Comment("comment1", savedPost.getId()));
 
         Tag tag1 = new Tag("tag1");
-        tag1.addPost(post);
-        tagService.save(tag1);
+        tagService.save(tag1, savedPost.getId());
 
         Tag tag2 = new Tag("tag2");
-        tag2.addPost(post);
-        tagService.save(tag2);
+        tagService.save(tag2, savedPost.getId());
 
+        Post byId = postService.findById(savedPost.getId());
 
-        PostDto postDto = postMapper.toDto(post);
+        PostDto postDto = postMapper.toDto(byId);
 
         Assertions.assertEquals(1, postDto.getComments().size());
         Assertions.assertTrue(postDto.tags.contains("tag1"));

@@ -40,7 +40,7 @@ public class TagServiceTest {
 
         when(repository.save(any(Tag.class))).thenAnswer(invocation -> {
             Tag tag = invocation.getArgument(0);
-            tag.setId(1);
+            tag.setId(1L);
             return tag;
         });
 
@@ -56,7 +56,7 @@ public class TagServiceTest {
     public void save_shouldCallSave() {
         when(repository.save(any(Tag.class))).thenReturn(new Tag("tag"));
 
-        Tag savedTag = service.save(new Tag("tag"));
+        Tag savedTag = service.save(new Tag("tag"), 1L);
 
         verify(repository).save(new Tag("tag"));
         Assertions.assertEquals(new Tag("tag"), savedTag);
@@ -91,7 +91,7 @@ public class TagServiceTest {
 
     @Test
     public void delete_shouldCallDelete() {
-        service.delete(1L);
+        service.deleteById(1L);
 
         verify(repository).deleteById(1L);
     }
