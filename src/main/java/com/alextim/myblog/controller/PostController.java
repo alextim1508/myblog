@@ -31,12 +31,8 @@ public class PostController {
     private final TagService tagService;
 
     @PostMapping
-    public String save(@Valid @ModelAttribute NewPostDto newPostDto, BindingResult bindingResult) {
+    public String save(@Valid @ModelAttribute NewPostDto newPostDto) {
         log.info("save post: {}", newPostDto);
-
-        if(bindingResult.hasErrors()) {
-            throw new RuntimeException(bindingResult.getAllErrors().toString());
-        }
 
         Post post = postMapper.toModel(newPostDto);
         postService.save(post);
@@ -46,13 +42,8 @@ public class PostController {
 
     @PostMapping(value = "/{id}", params = "_method=put")
     public String edit(@PathVariable("id") Long id,
-                       @Valid @ModelAttribute NewPostDto newPostDto,
-                       BindingResult bindingResult) {
+                       @Valid @ModelAttribute NewPostDto newPostDto) {
         log.info("update post with id {}: {}", id, newPostDto);
-
-        if(bindingResult.hasErrors()) {
-            throw new RuntimeException(bindingResult.getAllErrors().toString());
-        }
 
         Post post = postMapper.toModel(newPostDto);
         post.setId(id);
@@ -71,10 +62,10 @@ public class PostController {
         List<Post> posts;
         if (tagTitle != null && !tagTitle.isEmpty()) {
             posts = tagService.findTagByTitle(tagTitle)
-                    .map(value -> postService.findByTag(value, page, size).getContent())
+                    .map(value -> postService.findByTag(value.getId(), page, size))
                     .orElseGet(Collections::emptyList);
         } else {
-            posts = postService.findAll(page, size).getContent();
+            posts = postService.findAll(page, size);
         }
 
         List<PostShortDto> dtos = posts.stream().map(postMapper::toShortDto).toList();

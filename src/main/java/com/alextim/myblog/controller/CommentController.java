@@ -21,12 +21,8 @@ public class CommentController {
     private final CommentMapper commentMapper;
 
     @PostMapping
-    public String save(@Valid @ModelAttribute NewCommentDto newCommentDto, BindingResult bindingResult) {
+    public String save(@Valid @ModelAttribute NewCommentDto newCommentDto) {
         log.info("save comment: {}", newCommentDto);
-
-        if(bindingResult.hasErrors()) {
-            throw new RuntimeException(bindingResult.getAllErrors().toString());
-        }
 
         Comment comment = commentMapper.toModel(newCommentDto);
         commentService.save(comment);
@@ -55,7 +51,7 @@ public class CommentController {
     public String deleteComment(@PathVariable("id") Long id) {
         log.info("delete comment with id {}", id);
 
-        commentService.delete(id);
+        commentService.deleteById(id);
 
         return "redirect:/post";
     }
