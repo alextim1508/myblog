@@ -1,28 +1,19 @@
 package com.alextim.myblog.model;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Entity
 @Data
 @NoArgsConstructor
+@RequiredArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(of = {"content"})
 public class Comment {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
+    @NonNull
     private String content;
 
-    @JoinColumn(nullable = false)
-    @ManyToOne
-    private Post post;
-
-    public Comment(String content, Post post) {
-        this.content = content;
-        this.post = post;
-    }
+    @NonNull
+    private Long postId;
 }

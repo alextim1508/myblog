@@ -1,6 +1,5 @@
 package com.alextim.myblog.model;
 
-import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -8,41 +7,34 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Entity
 @Data
 @NoArgsConstructor
+@RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = "comments")
 @EqualsAndHashCode(of = {"title", "content"})
 public class Post {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
+    @NonNull
     private String title;
 
+    @NonNull
     private String content;
 
     private String imageUrl;
 
-    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @Singular
     private List<Comment> comments = new ArrayList<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "post_tag",
-            joinColumns = @JoinColumn(name = "post_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
+    @Singular
     private Set<Tag> tags = new HashSet<>();
 
     private int likeCount;
 
-    public Post(String title, String content) {
-        this.title = title;
-        this.content = content;
-    }
+    private int commentsSize;
 
     public Post(String title, String content, String imageUrl) {
         this.title = title;
