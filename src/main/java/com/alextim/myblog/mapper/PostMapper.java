@@ -31,7 +31,6 @@ public abstract class PostMapper {
     @Mapping(target = "tags", expression = "java(tagService.save(newPostDto.tags))")
     public abstract Post toModel(NewPostDto newPostDto);
 
-    @Mapping(target = "commentsSize", expression = "java(commentService.countByPost(post))")
     @Mapping(target = "tags", expression = "java(TagServiceImpl.tagsToString(post.getTags()))")
     public abstract PostShortDto toShortDto(Post post);
 
