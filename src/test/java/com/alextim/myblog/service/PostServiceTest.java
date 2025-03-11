@@ -1,16 +1,14 @@
 package com.alextim.myblog.service;
 
 import com.alextim.myblog.model.Post;
-import com.alextim.myblog.model.Tag;
 import com.alextim.myblog.repository.PostRepository;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +17,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
+@ExtendWith(MockitoExtension.class)
 public class PostServiceTest {
 
     @Mock
@@ -27,11 +25,6 @@ public class PostServiceTest {
 
     @InjectMocks
     private PostServiceImpl service;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     public void save_shouldCallSave() {
@@ -90,7 +83,7 @@ public class PostServiceTest {
 
         when(repository.findById(anyLong())).thenReturn(Optional.of(post));
 
-        when(repository.save(any(Post.class))).thenReturn(post);
+        when(repository.update(any(Post.class))).thenReturn(1);
 
         Post likedPost = service.like(1L);
 

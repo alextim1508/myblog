@@ -65,8 +65,8 @@ class PostControllerIntegrationTest {
     @Test
     void save_shouldSavePostAndReturnHtmlWithAllPosts() throws Exception {
         mockMvc.perform(post("/post")
-                        .param("title", "title")
-                        .param("content", "content")
+                        .param("title", "titletitletitle")
+                        .param("content", "contentcontentcontentcontentcontentcontent")
                         .param("tags", "tag1, tag2")
                         .param("imageUrl", "imageUrl"))
                 .andExpect(status().is3xxRedirection())
@@ -75,8 +75,8 @@ class PostControllerIntegrationTest {
         List<Post> posts = postService.findAll(0, 10);
         Assertions.assertEquals(1, posts.size());
 
-        Assertions.assertEquals("title", posts.get(0).getTitle());
-        Assertions.assertEquals("content", posts.get(0).getContent());
+        Assertions.assertEquals("titletitletitle", posts.get(0).getTitle());
+        Assertions.assertEquals("contentcontentcontentcontentcontentcontent", posts.get(0).getContent());
         Assertions.assertEquals("imageUrl", posts.get(0).getImageUrl());
         Assertions.assertEquals(2, posts.get(0).getTags().size());
         Assertions.assertTrue(posts.get(0).getTags().contains(new Tag("tag1")));
@@ -85,8 +85,8 @@ class PostControllerIntegrationTest {
     @Test
     void update_shouldUpdatePostAndReturnHtmlWithAllPosts() throws Exception {
         mockMvc.perform(post("/post")
-                        .param("title", "title")
-                        .param("content", "content")
+                        .param("title", "titletitletitle")
+                        .param("content", "contentcontentcontentcontentcontentcontent")
                         .param("tags", "tag1, tag2")
                         .param("imageUrl", "imageUrl"))
                 .andExpect(status().is3xxRedirection())
@@ -94,8 +94,8 @@ class PostControllerIntegrationTest {
 
         List<Post> posts = postService.findAll(0, 10);
         Assertions.assertEquals(1, posts.size());
-        Assertions.assertEquals("title", posts.get(0).getTitle());
-        Assertions.assertEquals("content", posts.get(0).getContent());
+        Assertions.assertEquals("titletitletitle", posts.get(0).getTitle());
+        Assertions.assertEquals("contentcontentcontentcontentcontentcontent", posts.get(0).getContent());
         Assertions.assertEquals("imageUrl", posts.get(0).getImageUrl());
         Assertions.assertEquals(2, posts.get(0).getTags().size());
         Assertions.assertTrue(posts.get(0).getTags().contains(new Tag("tag1")));

@@ -8,8 +8,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Slf4j
 @Controller
@@ -32,13 +34,8 @@ public class CommentController {
 
     @PostMapping("/{id}")
     public String editComment(@PathVariable("id") Long id,
-                              @Valid @ModelAttribute NewCommentDto newCommentDto,
-                              BindingResult bindingResult) {
+                              @Valid @ModelAttribute NewCommentDto newCommentDto) {
         log.info("update comment with id {}: {}", id, newCommentDto);
-
-        if(bindingResult.hasErrors()) {
-            throw new RuntimeException(bindingResult.getAllErrors().toString());
-        }
 
         Comment comment = commentMapper.toModel(newCommentDto);
         comment.setId(id);
