@@ -1,23 +1,17 @@
 package com.alextim.myblog.repository;
 
-import com.alextim.myblog.config.AppTestConfig;
 import com.alextim.myblog.model.Post;
 import com.alextim.myblog.model.Tag;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Optional;
 import java.util.Set;
 
-@WebAppConfiguration
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {AppTestConfig.class})
+@SpringBootTest
 public class TagRepositoryTest {
 
     @Autowired

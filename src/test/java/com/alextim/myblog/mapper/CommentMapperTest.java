@@ -1,6 +1,5 @@
 package com.alextim.myblog.mapper;
 
-import com.alextim.myblog.config.AppTestConfig;
 import com.alextim.myblog.dto.CommentDto;
 import com.alextim.myblog.dto.NewCommentDto;
 import com.alextim.myblog.model.Comment;
@@ -8,15 +7,11 @@ import com.alextim.myblog.model.Post;
 import com.alextim.myblog.service.PostService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 
-@WebAppConfiguration
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {AppTestConfig.class})
+
+@SpringBootTest
 public class CommentMapperTest {
 
     @Autowired

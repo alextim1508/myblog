@@ -3,11 +3,10 @@ package com.alextim.myblog.service;
 import com.alextim.myblog.model.Tag;
 import com.alextim.myblog.repository.TagRepository;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -19,19 +18,14 @@ import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
+@SpringBootTest
 public class TagServiceTest {
 
-    @Mock
+    @MockitoBean
     private TagRepository repository;
 
-    @InjectMocks
+    @Autowired
     private TagServiceImpl service;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     public void save_shouldSaveTagsAsString_whenTwoTagsAreExistAndOneTagIsNew() {
