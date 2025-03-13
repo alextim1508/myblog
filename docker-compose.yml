@@ -1,15 +1,14 @@
 version: '3.8'
 
 services:
-  tomcat:
-    image: 'bitnami/tomcat:latest'
-    container_name: tomcat
+  app:
+    image: openjdk:21-jdk-slim
     ports:
       - 8080:8080
-    environment:
-      ALLOW_EMPTY_PASSWORD: yes
+    working_dir: /app
     volumes:
-      - ./target/my-blog.war:/opt/bitnami/tomcat/webapps/my-blog.war
+      - ./target/my-blog.jar:/app/my-blog.jar
+    command: java -jar /app/my-blog.jar
   db:
     image: postgres:13.3
     container_name: db
