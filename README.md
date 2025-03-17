@@ -28,10 +28,10 @@
 git clone https://github.com/alextim1508/myblog
 ```
 
-Собрать war архив.
+Собрать jar архив.
 
 ```bash
-mvn clean package
+gradle bootJar
 ```
 
 Запустить docker compose файл.
@@ -44,7 +44,7 @@ docker-compose -f docker-compose.yml up -d
 Открыть в браузере вкладку с адресом.
 
 ```bash
-http://localhost:8080/my-blog/post
+http://localhost:8080/post
 ```
 
 ![](screenshots/1.jpg)
