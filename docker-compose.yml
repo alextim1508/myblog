@@ -7,7 +7,7 @@ services:
       - 8080:8080
     working_dir: /app
     volumes:
-      - ./target/my-blog.jar:/app/my-blog.jar
+      - ./build/libs/my-blog.jar:/app/my-blog.jar
     command: java -jar /app/my-blog.jar
   db:
     image: postgres:13.3
