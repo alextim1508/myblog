@@ -11,10 +11,9 @@ import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -63,6 +62,9 @@ public class PostWithTagsRowMapper implements ResultSetExtractor<List<Post>> {
 
             post.setCommentsSize(rs.getInt("comment_count"));
         }
-        return new ArrayList<>(posts.values());
+
+        return posts.values().stream()
+                .sorted(Comparator.comparing(Post::getId))
+                .collect(Collectors.toList());
     }
 }
