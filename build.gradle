@@ -1,17 +1,24 @@
-plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.4.0'
-    id 'io.spring.dependency-management' version '1.1.6'
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url 'https://repo.spring.io/release'
+        }
+    }
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:3.4.1"
+    }
 }
 
-group 'com.alextim'
-version '1.0-SNAPSHOT'
-
-repositories {
-    mavenCentral()
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.4' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
 }
 
 ext {
+    springBootVersion = '3.4.4'
+
     flywayVersion = "9.1.0"
     postgresVersion = "42.7.5"
     h2Version = "2.2.224"
@@ -21,36 +28,64 @@ ext {
     lombokMapstructBindingVersion = "0.2.0"
 }
 
-bootJar {
-    archiveBaseName = 'my-blog'
-    archiveVersion = ''
+allprojects {
+    group = 'com.alextim'
+    version = '0.0.1-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+        maven { url 'https://repo.spring.io/release' }
+    }
 }
+subprojects { project ->
 
-dependencies {
-    //========== Web ==========
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
 
-    //========== Database ==========
-    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
-    implementation "org.flywaydb:flyway-core:${flywayVersion}"
-    implementation "org.postgresql:postgresql:${postgresVersion}"
-    testImplementation "com.h2database:h2:${h2Version}"
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
 
-    //========== Mapper ==========
-    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
-    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
-    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+        }
+    }
+    dependencies {
+        //========== Web ==========
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-    //========== Utils ==========
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+        //========== Database ==========
+        implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+        implementation "org.flywaydb:flyway-core:${flywayVersion}"
+        implementation "org.postgresql:postgresql:${postgresVersion}"
+        testImplementation "com.h2database:h2:${h2Version}"
 
-    //========== Test ==========
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-}
+        //========== Mapper ==========
+        implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+        annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
+        annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
 
-test {
-    useJUnitPlatform()
+        //========== Utils ==========
+        compileOnly "org.projectlombok:lombok:${lombokVersion}"
+        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+        //========== Test ==========
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    tasks.withType(Test) {
+        useJUnitPlatform()
+    }
 }

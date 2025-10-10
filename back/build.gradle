@@ -1,0 +1,4 @@
+jar {
+    archiveBaseName.set("back")
+    archiveVersion.set("")
+}

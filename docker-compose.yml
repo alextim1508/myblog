@@ -2,10 +2,11 @@ version: '3.8'
 
 services:
   app:
-    image: openjdk:21-jdk-slim
+    container_name: app
+    build:
+      context: ./back
     ports:
       - 8080:8080
-    working_dir: /app
     volumes:
       - ./build/libs/my-blog.jar:/app/my-blog.jar
     command: java -jar /app/my-blog.jar
