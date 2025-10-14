@@ -21,23 +21,31 @@ public class ImageServiceImpl implements ImageService {
         log.info("Saving image for postId: {}", image.getPostId());
         log.debug("Image data: {}", image);
 
-        if (image.getId() == null) {
-            log.info("Image ID is null, creating new image with filename: {}", image.getFileName());
+        Optional<Image> existingImageOpt = repository.findByPostId(image.getPostId());
+
+        if (existingImageOpt.isEmpty()) {
+            log.info("No existing image found for postId: {}, creating new image", image.getPostId());
+
             Image savedImage = repository.save(image);
             log.info("Successfully created image with ID: {}", savedImage.getId());
             return savedImage;
         } else {
-            log.info("Image ID is not null, updating existing image with ID: {}", image.getId());
-            int updatedRowCount = repository.update(image);
+            Image existingImage = existingImageOpt.get();
+            log.info("Existing image found with ID: {} for postId: {}, updating image", existingImage.getId(), image.getPostId());
+
+            existingImage.setData(image.getData());
+            existingImage.setFileName(image.getFileName());
+            existingImage.setSize(image.getSize());
+
+            int updatedRowCount = repository.update(existingImage);
 
             if (updatedRowCount != 1) {
-                log.error("Failed to update image with ID: {}. Updated row count: {}", image.getId(), updatedRowCount);
+                log.error("Failed to update image with ID: {}. Updated row count: {}", existingImage.getId(), updatedRowCount);
                 throw new ClientException("Update image exception. updatedRowCount: " + updatedRowCount);
             }
 
-            log.info("Successfully updated image with ID: {}", image.getId());
-            return repository.findById(image.getId())
-                    .orElseThrow(() -> new ClientException("Image with ID " + image.getId() + " not found after update"));
+            log.info("Successfully updated image with ID: {}", existingImage.getId());
+            return existingImage;
         }
     }
 
@@ -53,5 +61,12 @@ public class ImageServiceImpl implements ImageService {
         }
 
         return image;
+    }
+
+    @Override
+    public void deleteByPostId(long postId) {
+        log.info("Deleting comments for post ID: {}", postId);
+        repository.deleteByPostId(postId);
+        log.info("Successfully deleted comments for post ID: {}", postId);
     }
 }

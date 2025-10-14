@@ -1,8 +1,6 @@
 package com.alextim.myblog.repository;
 
 import com.alextim.myblog.model.Post;
-import com.alextim.myblog.service.CommentService;
-import com.alextim.myblog.service.TagService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -19,17 +17,20 @@ import java.util.List;
 @Repository
 public class PostRepositoryImpl extends AbstractRepositoryImpl<Post> implements PostRepository {
 
-    private final CommentService commentService;
-    private final TagService tagService;
+    private final CommentRepository commentRepository;
+    private final TagRepository tagRepository;
+    private final ImageRepository imageRepository;
 
     public PostRepositoryImpl(JdbcTemplate jdbcTemplate,
                               RowMapper<Post> postRowMapper,
-                              CommentService commentService,
-                              TagService tagService) {
+                              CommentRepository commentRepository,
+                              TagRepository tagRepository,
+                              ImageRepository imageRepository) {
         super(jdbcTemplate, postRowMapper);
 
-        this.commentService = commentService;
-        this.tagService = tagService;
+        this.commentRepository = commentRepository;
+        this.tagRepository = tagRepository;
+        this.imageRepository = imageRepository;
     }
 
     @Override
@@ -175,11 +176,14 @@ public class PostRepositoryImpl extends AbstractRepositoryImpl<Post> implements 
     public void deleteById(long id) {
         log.info("Deleting post with ID: {}", id);
 
-        commentService.deleteByPostId(id);
+        commentRepository.deleteByPostId(id);
         log.info("Deleted comments for post ID: {}", id);
 
-        tagService.deleteRelationshipByPostId(id);
+        tagRepository.deleteRelationshipByPostId(id);
         log.info("Deleted tag relationships for post ID: {}", id);
+
+        imageRepository.deleteByPostId(id);
+        log.info("Deleted image relationships for post ID: {}", id);
 
         super.deleteById(id);
         log.info("Successfully deleted post with ID: {}", id);

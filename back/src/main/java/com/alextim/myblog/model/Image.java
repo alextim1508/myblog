@@ -8,6 +8,7 @@ import lombok.*;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = {"fileName", "postId"})
+@ToString(exclude = "data")
 public class Image {
 
     private Long id;

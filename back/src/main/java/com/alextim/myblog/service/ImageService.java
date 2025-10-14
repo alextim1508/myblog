@@ -8,4 +8,6 @@ public interface ImageService {
     Image save(Image image);
 
     Optional<Image> findByPostId(long postId);
+
+    void deleteByPostId(long id);
 }
