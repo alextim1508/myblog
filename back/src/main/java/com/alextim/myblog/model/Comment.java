@@ -6,13 +6,13 @@ import lombok.*;
 @NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = {"content"})
+@EqualsAndHashCode(of = {"text", "postId"})
 public class Comment {
 
     private Long id;
 
     @NonNull
-    private String content;
+    private String text;
 
     @NonNull
     private Long postId;

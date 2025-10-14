@@ -5,7 +5,7 @@ import java.util.Optional;
 
 public interface AbstractRepository<T> {
 
-    Optional<T> findById(Long id);
+    Optional<T> findById(long id);
 
     List<T> findAll();
 
@@ -13,7 +13,7 @@ public interface AbstractRepository<T> {
 
     void delete();
 
-    void deleteById(Long id);
+    void deleteById(long id);
 
     int count();
 }

@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
 
 @Component
 public class PostRowMapper implements RowMapper<Post> {
@@ -17,11 +15,8 @@ public class PostRowMapper implements RowMapper<Post> {
         return Post.builder()
                 .id(rs.getLong("id"))
                 .title(rs.getString("title"))
-                .content(rs.getString("content"))
-                .imageUrl(rs.getString("imageUrl"))
-                .likeCount(rs.getInt("likeCount"))
-                .tags(new HashSet<>())
-                .comments(new ArrayList<>())
+                .text(rs.getString("content"))
+                .likesCount(rs.getInt("likeCount"))
                 .build();
     }
 }

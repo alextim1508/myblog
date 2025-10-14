@@ -1,165 +1,228 @@
 package com.alextim.myblog.repository;
 
-import com.alextim.myblog.model.Comment;
 import com.alextim.myblog.model.Post;
 import com.alextim.myblog.model.Tag;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
-@SpringBootTest
-public class PostRepositoryTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-    @Autowired
-    PostRepository postRepository;
 
-    @Autowired
-    CommentRepository commentRepository;
-
-    @Autowired
-    TagRepository tagRepository;
-
-    @BeforeEach
-    void setUp() {
-        commentRepository.delete();
-        postRepository.delete();
-        tagRepository.deleteRelationships();
-        tagRepository.delete();
-    }
+public class PostRepositoryTest extends RepositoryTest{
 
     @Test
     public void save_shouldSaveAndFindById() {
-        Post post = new Post("title", "content", "url");
-        Post savedPost = postRepository.save(post);
-        Assertions.assertTrue(savedPost.getId() != 0);
+        Post savedPost = postRepository.save(new Post("title", "content"));
+        assertTrue(savedPost.getId() != 0);
 
         Optional<Post> byId = postRepository.findById(savedPost.getId());
-        Assertions.assertTrue(byId.isPresent());
-        Assertions.assertEquals("title", byId.get().getTitle());
-        Assertions.assertEquals("content", byId.get().getContent());
+        assertTrue(byId.isPresent());
+        assertEquals(savedPost, byId.get());
     }
 
     @Test
     public void update_shouldUpdateAndFindById() {
         Post post = new Post("title", "content");
         Post savedPost = postRepository.save(post);
-        Assertions.assertTrue(savedPost.getId() != 0);
+        assertTrue(savedPost.getId() != 0);
 
         savedPost.setTitle("NewTitle");
-        savedPost.setContent("NewContent");
-        savedPost.setImageUrl("NewImageUrl");
+        savedPost.setText("NewContent");
 
         int updatedEntitiesNumber = postRepository.update(savedPost);
-        Assertions.assertEquals(1, updatedEntitiesNumber);
+        assertEquals(1, updatedEntitiesNumber);
 
         Optional<Post> byId = postRepository.findById(savedPost.getId());
-        Assertions.assertTrue(byId.isPresent());
-        Assertions.assertEquals("NewTitle", byId.get().getTitle());
-        Assertions.assertEquals("NewContent", byId.get().getContent());
-        Assertions.assertEquals("NewImageUrl", byId.get().getImageUrl());
+        assertTrue(byId.isPresent());
+        assertEquals("NewTitle", byId.get().getTitle());
+        assertEquals("NewContent", byId.get().getText());
+    }
+
+
+    @Test
+    public void findByTagIds_shouldReturnPostsByTagIds() {
+        Post savedPost1 = postRepository.save(new Post("title1", "content1"));
+        Post savedPost2 = postRepository.save(new Post("title2", "content2"));
+
+        Tag savedTag = tagRepository.save(new Tag("java"));
+        tagRepository.saveRelationship(savedTag.getId(), savedPost1.getId());
+        tagRepository.saveRelationship(savedTag.getId(), savedPost2.getId());
+
+        List<Post> posts = postRepository.findByTagIds(List.of(savedTag.getId()), Integer.MAX_VALUE, 0);
+
+        assertEquals(2, posts.size());
+        assertTrue(posts.contains(savedPost1));
+        assertTrue(posts.contains(savedPost2));
     }
 
     @Test
-    public void findById_shouldSaveAndFindPostWithTagsAndCommentsById() {
-        Post post = new Post("title", "content");
-        Post savedPost = postRepository.save(post);
-
-        Comment comment1 = new Comment("comment1", savedPost.getId());
-        commentRepository.save(comment1);
-        Comment comment2 = new Comment("comment2", savedPost.getId());
-        commentRepository.save(comment2);
-
-        Tag tag = tagRepository.save(new Tag("tag"));
-        tagRepository.saveRelationship(tag.getId(), savedPost.getId());
-
-        Optional<Post> byId = postRepository.findById(savedPost.getId());
-        Assertions.assertTrue(byId.isPresent());
-        Assertions.assertEquals("title", byId.get().getTitle());
-        Assertions.assertEquals("content", byId.get().getContent());
-
-        List<Comment> comments = byId.get().getComments();
-        Assertions.assertEquals(2, comments.size());
-        Assertions.assertTrue(comments.contains(comment1));
-        Assertions.assertTrue(comments.contains(comment2));
-
-        Set<Tag> tags = byId.get().getTags();
-        Assertions.assertEquals(1, tags.size());
-        Assertions.assertTrue(tags.contains(tag));
-
-        Assertions.assertEquals(2, byId.get().getCommentsSize());
+    public void findByTagIds_shouldReturnEmptyListWhenTagIdsEmpty() {
+        List<Post> posts = postRepository.findByTagIds(Collections.emptyList(), Integer.MAX_VALUE, 0);
+        assertEquals(0, posts.size());
     }
 
     @Test
-    public void findAllPostsWithTags_shouldSaveAndFindPostWithTagsAndCommentCountById() {
-        Post post1 = new Post("title1", "content1");
-        Post savedPost1 = postRepository.save(post1);
-
-        Comment comment1 = new Comment("comment1", savedPost1.getId());
-        commentRepository.save(comment1);
-        Comment comment2 = new Comment("comment2", savedPost1.getId());
-        commentRepository.save(comment2);
-
-        Tag tag = tagRepository.save(new Tag("tag"));
-        tagRepository.saveRelationship(tag.getId(), savedPost1.getId());
-
-        Post post2 = new Post("title2", "content2");
-        Post savedPost2 = postRepository.save(post2);
-
-        Comment comment3 = new Comment("comment3", savedPost2.getId());
-        commentRepository.save(comment3);
-
-        tagRepository.saveRelationship(tag.getId(), savedPost2.getId());
-
-        List<Post> post = postRepository.findAllPostsWithTags(10, 0);
-        Assertions.assertEquals(2, post.size());
-
-        Assertions.assertEquals(1, post.get(0).getTags().size());
-        Assertions.assertTrue( post.get(0).getTags().contains(tag));
-        Assertions.assertEquals(1, post.get(1).getTags().size());
-        Assertions.assertTrue( post.get(1).getTags().contains(tag));
-
-        Assertions.assertEquals(2, post.get(0).getCommentsSize());
-        Assertions.assertEquals(1, post.get(1).getCommentsSize());
+    public void findByTagIds_shouldReturnEmptyListWhenTagIdsNotExist() {
+        List<Post> posts = postRepository.findByTagIds(List.of(999L), Integer.MAX_VALUE, 0);
+        assertEquals(0, posts.size());
     }
 
     @Test
-    public void findByTags_shouldSaveAndFindPostWithTagsAndCommentCountByTagId() {
-        Post post1 = new Post("title1", "content1");
-        Post savedPost1 = postRepository.save(post1);
+    public void findByTagIds_shouldReturnEmptyListWhenTagHasNoPosts() {
+        Tag savedTag = tagRepository.save(new Tag("empty"));
 
-        Comment comment1 = new Comment("comment1", savedPost1.getId());
-        commentRepository.save(comment1);
-        Comment comment2 = new Comment("comment2", savedPost1.getId());
-        commentRepository.save(comment2);
+        List<Post> posts = postRepository.findByTagIds(List.of(savedTag.getId()), Integer.MAX_VALUE, 0);
 
-        Tag tag1 = tagRepository.save(new Tag("tag1"));
-        tagRepository.saveRelationship(tag1.getId(), savedPost1.getId());
+        assertEquals(0, posts.size());
+    }
 
-        Post post2 = new Post("title2", "content2");
-        Post savedPost2 = postRepository.save(post2);
+    @Test
+    public void findByTagIds_shouldReturnPostsByMultipleTagIds() {
+        Post savedPost1 = postRepository.save(new Post("title1", "content1"));
+        Post savedPost2 = postRepository.save(new Post("title2", "content2"));
 
-        Comment comment3 = new Comment("comment3", savedPost2.getId());
-        commentRepository.save(comment3);
+        Tag savedTag1 = tagRepository.save(new Tag("java"));
+        Tag savedTag2 = tagRepository.save(new Tag("spring"));
 
-        tagRepository.saveRelationship(tag1.getId(), savedPost2.getId());
+        tagRepository.saveRelationship(savedTag1.getId(), savedPost1.getId());
+        tagRepository.saveRelationship(savedTag2.getId(), savedPost2.getId());
 
-        Tag tag2 = tagRepository.save(new Tag("tag2"));
+        List<Post> posts = postRepository.findByTagIds(List.of(savedTag1.getId(), savedTag2.getId()), Integer.MAX_VALUE, 0);
 
-        List<Post> post = postRepository.findByTagIds(List.of(tag1.getId(), tag2.getId()), 10, 0);
-        Assertions.assertEquals(2, post.size());
+        assertEquals(2, posts.size());
+        assertTrue(posts.contains(savedPost1));
+        assertTrue(posts.contains(savedPost2));
+    }
 
-        Assertions.assertEquals(1, post.get(0).getTags().size());
-        Assertions.assertTrue( post.get(0).getTags().contains(tag1));
-        Assertions.assertEquals(1, post.get(1).getTags().size());
-        Assertions.assertTrue( post.get(1).getTags().contains(tag1));
+    @Test
+    public void findByTagIds_shouldRespectLimitAndOffset() {
+        Post savedPost1 = postRepository.save(new Post("title1", "content1"));
+        Post savedPost2 = postRepository.save(new Post("title2", "content2"));
+        Post savedPost3 = postRepository.save(new Post("title3", "content3"));
 
-        Assertions.assertEquals(2, post.get(0).getCommentsSize());
-        Assertions.assertEquals(1, post.get(1).getCommentsSize());
+        Tag savedTag = tagRepository.save(new Tag("java"));
+
+        tagRepository.saveRelationship(savedTag.getId(), savedPost1.getId());
+        tagRepository.saveRelationship(savedTag.getId(), savedPost2.getId());
+        tagRepository.saveRelationship(savedTag.getId(), savedPost3.getId());
+
+        List<Post> posts = postRepository.findByTagIds(List.of(savedTag.getId()), 2, 0);
+
+        assertEquals(2, posts.size());
+        assertEquals(savedPost1, posts.get(0));
+        assertEquals(savedPost2, posts.get(1));
+    }
+
+    @Test
+    public void findByTagIds_shouldRespectOffset() {
+        Post savedPost1 = postRepository.save(new Post("title1", "content1"));
+        Post savedPost2 = postRepository.save(new Post("title2", "content2"));
+        Post savedPost3 = postRepository.save(new Post("title3", "content3"));
+
+        Tag savedTag = tagRepository.save(new Tag("java"));
+
+        tagRepository.saveRelationship(savedTag.getId(), savedPost1.getId());
+        tagRepository.saveRelationship(savedTag.getId(), savedPost2.getId());
+        tagRepository.saveRelationship(savedTag.getId(), savedPost3.getId());
+
+        List<Post> posts = postRepository.findByTagIds(List.of(savedTag.getId()), 1, 1);
+
+        assertEquals(1, posts.size());
+        assertEquals(savedPost2, posts.get(0));
+    }
+
+    @Test
+    public void findByTitleOrContent_shouldReturnPostsByTitle() {
+        Post savedPost1 = postRepository.save(new Post("Java Guide", "Learn Java"));
+        Post savedPost2 = postRepository.save(new Post("Spring Boot", "Learn Spring"));
+
+        List<Post> posts = postRepository.findByTitleOrContent("java", Integer.MAX_VALUE, 0);
+
+        assertEquals(1, posts.size());
+        assertEquals(savedPost1, posts.get(0));
+    }
+
+    @Test
+    public void findByTitleOrContent_shouldReturnPostsByContent() {
+        Post savedPost1 = postRepository.save(new Post("Guide", "Learn Java here"));
+        Post savedPost2 = postRepository.save(new Post("Article", "Learn Kotlin here"));
+
+        List<Post> posts = postRepository.findByTitleOrContent("java", Integer.MAX_VALUE, 0);
+
+        assertEquals(1, posts.size());
+        assertEquals(savedPost1, posts.get(0));
+    }
+
+    @Test
+    public void findByTitleOrContent_shouldReturnPostsByTitleAndContent() {
+        Post savedPost1 = postRepository.save(new Post("Java Guide", "Learn Java"));
+        Post savedPost2 = postRepository.save(new Post("Article", "Learn Kotlin"));
+        Post savedPost3 = postRepository.save(new Post("Kotlin", "Learn Kotlin here"));
+
+        List<Post> posts = postRepository.findByTitleOrContent("kotlin", Integer.MAX_VALUE, 0);
+
+        assertEquals(2, posts.size());
+        assertTrue(posts.contains(savedPost2));
+        assertTrue(posts.contains(savedPost3));
+    }
+
+    @Test
+    public void findByTitleOrContent_shouldReturnEmptyListWhenQueryIsNull() {
+        List<Post> posts = postRepository.findByTitleOrContent(null, Integer.MAX_VALUE, 0);
+
+        assertEquals(0, posts.size());
+    }
+
+    @Test
+    public void findByTitleOrContent_shouldReturnEmptyListWhenQueryIsEmpty() {
+        List<Post> posts = postRepository.findByTitleOrContent("", Integer.MAX_VALUE, 0);
+
+        assertEquals(0, posts.size());
+    }
+
+    @Test
+    public void findByTitleOrContent_shouldReturnEmptyListWhenQueryIsWhitespace() {
+        List<Post> posts = postRepository.findByTitleOrContent("   ", Integer.MAX_VALUE, 0);
+
+        assertEquals(0, posts.size());
+    }
+
+    @Test
+    public void findByTitleOrContent_shouldReturnEmptyListWhenNoMatch() {
+        postRepository.save(new Post("title1", "content1"));
+
+        List<Post> posts = postRepository.findByTitleOrContent("nonexistent", Integer.MAX_VALUE, 0);
+
+        assertEquals(0, posts.size());
+    }
+
+    @Test
+    public void findByTitleOrContent_shouldRespectLimitAndOffset() {
+        postRepository.save(new Post("Java Guide", "Learn Java"));
+        postRepository.save(new Post("Java Tips", "More Java"));
+        postRepository.save(new Post("Kotlin", "Learn Kotlin"));
+
+        List<Post> posts = postRepository.findByTitleOrContent("java", 1, 0); // limit = 1, offset = 0
+
+        assertEquals(1, posts.size());
+    }
+
+    @Test
+    public void findByTitleOrContent_shouldRespectOffset() {
+        postRepository.save(new Post("Java Guide", "Learn Java"));
+        postRepository.save(new Post("Java Tips", "More Java"));
+        postRepository.save(new Post("Java Advanced", "Deep Java"));
+
+        List<Post> posts = postRepository.findByTitleOrContent("java", 1, 1); // limit = 1, offset = 1
+
+        assertEquals(1, posts.size());
+        assertEquals("Java Tips", posts.get(0).getTitle());
     }
 }

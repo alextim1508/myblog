@@ -1,115 +1,114 @@
 package com.alextim.myblog.controller;
 
-import com.alextim.myblog.dto.NewPostDto;
-import com.alextim.myblog.dto.PostDto;
-import com.alextim.myblog.dto.PostShortDto;
+import com.alextim.myblog.dto.CreatePostRequestDto;
+import com.alextim.myblog.dto.PostListResponseDto;
+import com.alextim.myblog.dto.PostResponseDto;
+import com.alextim.myblog.dto.UpdatePostRequestDto;
 import com.alextim.myblog.mapper.PostMapper;
 import com.alextim.myblog.model.Post;
 import com.alextim.myblog.service.PostService;
 import com.alextim.myblog.service.TagService;
+import com.alextim.myblog.util.PaginationHelper;
+import com.alextim.myblog.util.PaginationResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 
-@Slf4j
-@Controller
-@RequestMapping("/post")
+@RestController
+@RequestMapping("/api/posts")
 @RequiredArgsConstructor
+@Slf4j
 public class PostController {
 
     private final PostService postService;
+    private final TagService tagService;
     private final PostMapper postMapper;
 
-    private final TagService tagService;
-
     @PostMapping
-    public String save(@Valid @ModelAttribute NewPostDto newPostDto) {
-        log.info("save post: {}", newPostDto);
+    public ResponseEntity<PostResponseDto> createPost(@Valid @RequestBody CreatePostRequestDto request) {
+        log.info("Creating post: {}", request);
 
-        Post post = postMapper.toModel(newPostDto);
-        postService.save(post);
+        Post post = postMapper.toModel(request);
+        log.debug("Mapped CreatePostRequestDto to Post model: {}", post);
 
-        return "redirect:/post";
+        Post saved = postService.save(post);
+        log.info("Successfully created post with ID: {}", saved.getId());
+
+        PostResponseDto postResponseDto = postMapper.toDto(saved);
+        log.debug("Returning post DTO: {}", postResponseDto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(postResponseDto);
     }
 
-    @PostMapping(value = "/{id}", params = "_method=put")
-    public String edit(@PathVariable("id") Long id,
-                       @Valid @ModelAttribute NewPostDto newPostDto) {
-        log.info("update post with id {}: {}", id, newPostDto);
+    @PutMapping("/{id}")
+    public ResponseEntity<PostResponseDto> updatePost(@PathVariable Long id,
+                                                      @Valid @RequestBody UpdatePostRequestDto request) {
+        log.info("Updating post with ID: {}", id);
 
-        Post post = postMapper.toModel(newPostDto);
-        post.setId(id);
-        postService.save(post);
+        Post post = postMapper.toModel(request);
+        log.debug("Mapped UpdatePostRequestDto to Post model: {}", post);
 
-        return "redirect:/post";
+        Post updated = postService.save(post);
+        log.info("Successfully updated post with ID: {}", id);
+
+        PostResponseDto postResponseDto = postMapper.toDto(updated);
+        log.debug("Returning post DTO: {}", postResponseDto);
+
+        return ResponseEntity.ok(postResponseDto);
     }
 
     @GetMapping
-    public String getPosts(@RequestParam(name = "tag", required = false) String tagTitle,
-                           @RequestParam(name = "page", defaultValue = "0") int page,
-                           @RequestParam(name = "size", defaultValue = "10") int size,
-                           Model model) {
-        log.info("get post with page {} size {} by tag '{}'", page, size, tagTitle);
+    public ResponseEntity<PostListResponseDto> getPosts(
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "pageNumber", defaultValue = "1") int page,
+            @RequestParam(name = "pageSize", defaultValue = "10") int size) {
 
-        List<Post> posts;
-        if (tagTitle != null && !tagTitle.isEmpty()) {
-            posts = tagService.findTagByTitle(tagTitle)
-                    .map(value -> postService.findByTag(value.getId(), page, size))
-                    .orElseGet(Collections::emptyList);
-        } else {
-            posts = postService.findAll(page, size);
-        }
+        log.info("Getting posts with page {} size {} by search query '{}'", page, size, search);
 
-        List<PostShortDto> dtos = posts.stream().map(postMapper::toShortDto).toList();
+        List<Post> posts = postService.getPosts(search,page, size);
 
-        model.addAttribute("postlist", dtos);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("size", size);
+        long count = postService.count();
 
-        if(tagTitle != null)
-            model.addAttribute("tag", tagTitle);
+        PaginationResult pagination = PaginationHelper.calculate(count, size, page);
 
-        return "list-posts";
+        PostListResponseDto postListResponseDto = new PostListResponseDto(
+                posts.stream().map(postMapper::toDto).toList(),
+                pagination.isHasPrev(),
+                pagination.isHasNext(),
+                pagination.getLastPage()
+        );
+
+        log.debug("Returning {} posts, hasPrev: {}, hasNext: {}, lastPage: {}",
+                posts.size(), pagination.isHasPrev(), pagination.isHasNext(), pagination.getLastPage());
+
+        return ResponseEntity.ok(postListResponseDto);
     }
 
     @GetMapping("/{id}")
-    public String getPost(@PathVariable("id") Long id, Model model) {
-        log.info("get post with id {}: ", id);
+    public ResponseEntity<PostResponseDto> getPost(@PathVariable("id") Long id) {
+        log.info("Getting post with ID: {}", id);
 
         Post post = postService.findById(id);
-        if (post == null) {
-            return "error";
-        }
 
-        PostDto postDto = postMapper.toDto(post);
+        log.debug("Found post: {}", post);
 
-        model.addAttribute("post", postDto);
-        model.addAttribute("comments", postDto.getComments());
+        PostResponseDto postResponseDto = postMapper.toDto(post);
+        log.debug("Returning post DTO: {}", postResponseDto);
 
-        return "post";
+        return ResponseEntity.ok(postResponseDto);
     }
 
-    @PostMapping(value = "/{id}", params = "_method=delete")
-    public String delete(@PathVariable(name = "id") Long id) {
-        log.info("delete post with id {}", id);
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void deletePost(@PathVariable Long id) {
+        log.info("Deleting post with ID: {}", id);
 
         postService.delete(id);
-
-        return "redirect:/post";
-    }
-
-    @PostMapping("/{id}/like")
-    public String likePost(@PathVariable("id") Long id) {
-        log.info("like post with id {}", id);
-
-        postService.like(id);
-
-        return "redirect:/post/" + id;
+        log.info("Successfully deleted post with ID: {}", id);
     }
 }

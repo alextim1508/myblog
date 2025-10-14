@@ -1,175 +1,227 @@
 package com.alextim.myblog.controller;
 
-import com.alextim.myblog.model.Comment;
+import com.alextim.myblog.dto.CreatePostRequestDto;
+import com.alextim.myblog.dto.PostListResponseDto;
+import com.alextim.myblog.dto.PostResponseDto;
+import com.alextim.myblog.dto.UpdatePostRequestDto;
+import com.alextim.myblog.mapper.PostMapper;
 import com.alextim.myblog.model.Post;
-import com.alextim.myblog.model.Tag;
-import com.alextim.myblog.repository.CommentRepository;
-import com.alextim.myblog.repository.PostRepository;
-import com.alextim.myblog.repository.TagRepository;
-import com.alextim.myblog.service.CommentService;
 import com.alextim.myblog.service.PostService;
 import com.alextim.myblog.service.TagService;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import com.alextim.myblog.util.PaginationHelper;
+import com.alextim.myblog.util.PaginationResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@AutoConfigureMockMvc
-@SpringBootTest
-class PostControllerIntegrationTest {
-
-    @Autowired
-    private PostService postService;
-
-    @Autowired
-    private TagService tagService;
-
-    @Autowired
-    private CommentService commentService;
+@WebMvcTest(PostController.class)
+class PostControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    PostRepository postRepository;
-    @Autowired
-    CommentRepository commentRepository;
-    @Autowired
-    TagRepository tagRepository;
+    @MockitoBean
+    private PostService postService;
 
-    @BeforeEach
-    void setUp() {
-        commentRepository.delete();
-        postRepository.delete();
-        tagRepository.deleteRelationships();
-        tagRepository.delete();
+    @MockitoBean
+    private TagService tagService;
+
+    @MockitoBean
+    private PostMapper postMapper;
+
+    @Test
+    void createPost_shouldReturnCreatedPost() throws Exception {
+        CreatePostRequestDto request = new CreatePostRequestDto("Test Title", "Test Content", List.of("java", "spring"));
+
+        Post post = new Post("Test Title", "Test Content");
+        post.setId(1L);
+
+        PostResponseDto responseDto = new PostResponseDto(
+                1L,
+                "Test Title",
+                "Test Content",
+                List.of("java", "spring"),
+                0,
+                0
+        );
+
+        when(postMapper.toModel(any(CreatePostRequestDto.class))).thenReturn(post);
+        when(postService.save(any())).thenReturn(post);
+        when(postMapper.toDto(any())).thenReturn(responseDto);
+
+        mockMvc.perform(post("/api/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "title": "Test Title",
+                                    "text": "Test Content",
+                                    "tags": ["java", "spring"]
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.title").value("Test Title"))
+                .andExpect(jsonPath("$.tags").isArray())
+                .andExpect(jsonPath("$.tags[0]").value("java"))
+                .andExpect(jsonPath("$.tags[1]").value("spring"))
+                .andExpect(jsonPath("$.likesCount").value(0))
+                .andExpect(jsonPath("$.commentsCount").value(0));
+
+        verify(postService).save(any(Post.class));
     }
 
     @Test
-    void save_shouldSavePostAndReturnHtmlWithAllPosts() throws Exception {
-        mockMvc.perform(post("/post")
-                        .param("title", "titletitletitle")
-                        .param("content", "contentcontentcontentcontentcontentcontent")
-                        .param("tags", "tag1, tag2")
-                        .param("imageUrl", "imageUrl"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/post"));
+    void updatePost_shouldReturnUpdatedPost() throws Exception {
+        Long postId = 1L;
+        UpdatePostRequestDto request = new UpdatePostRequestDto(postId, "Updated Title", "Updated Content", List.of("java", "spring"));
 
-        List<Post> posts = postService.findAll(0, 10);
-        Assertions.assertEquals(1, posts.size());
+        Post post = new Post("Updated Title", "Updated Content");
+        post.setId(postId);
 
-        Assertions.assertEquals("titletitletitle", posts.get(0).getTitle());
-        Assertions.assertEquals("contentcontentcontentcontentcontentcontent", posts.get(0).getContent());
-        Assertions.assertEquals("imageUrl", posts.get(0).getImageUrl());
-        Assertions.assertEquals(2, posts.get(0).getTags().size());
-        Assertions.assertTrue(posts.get(0).getTags().contains(new Tag("tag1")));
-    }
+        PostResponseDto responseDto = new PostResponseDto(
+                postId,
+                "Updated Title",
+                "Updated Content",
+                List.of("java", "spring"),
+                5,
+                3
+        );
 
-    @Test
-    void update_shouldUpdatePostAndReturnHtmlWithAllPosts() throws Exception {
-        mockMvc.perform(post("/post")
-                        .param("title", "titletitletitle")
-                        .param("content", "contentcontentcontentcontentcontentcontent")
-                        .param("tags", "tag1, tag2")
-                        .param("imageUrl", "imageUrl"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/post"));
+        when(postMapper.toModel(any(UpdatePostRequestDto.class))).thenReturn(post);
+        when(postService.save(any())).thenReturn(post);
+        when(postMapper.toDto(any())).thenReturn(responseDto);
 
-        List<Post> posts = postService.findAll(0, 10);
-        Assertions.assertEquals(1, posts.size());
-        Assertions.assertEquals("titletitletitle", posts.get(0).getTitle());
-        Assertions.assertEquals("contentcontentcontentcontentcontentcontent", posts.get(0).getContent());
-        Assertions.assertEquals("imageUrl", posts.get(0).getImageUrl());
-        Assertions.assertEquals(2, posts.get(0).getTags().size());
-        Assertions.assertTrue(posts.get(0).getTags().contains(new Tag("tag1")));
-    }
-
-    @Test
-    void getPosts_shouldReturnHtmlWithPosts() throws Exception {
-        postService.save(new Post("title1", "content1", "url1"));
-        postService.save(new Post("title2", "content2", "url2"));
-        postService.save(new Post("title3", "content3", "url3"));
-
-        mockMvc.perform(get("/post"))
+        mockMvc.perform(put("/api/posts/{id}", postId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "id": 1,
+                                    "title": "Updated Title",
+                                    "text": "Updated Content",
+                                    "tags": ["java", "spring"]
+                                }
+                                """))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("list-posts"))
-                .andExpect(model().attributeExists("postlist"))
-                .andExpect(xpath("//table/tbody/tr").nodeCount(3))
-                .andExpect(xpath("//table/tbody/tr[1]/td[1]").string("title1"))
-                .andExpect(xpath("//table/tbody/tr[1]/td[3]").string("content1"))
-                .andExpect(xpath("//table/tbody/tr[2]/td[1]").string("title2"))
-                .andExpect(xpath("//table/tbody/tr[2]/td[3]").string("content2"))
-                .andExpect(xpath("//table/tbody/tr[3]/td[1]").string("title3"))
-                .andExpect(xpath("//table/tbody/tr[3]/td[3]").string("content3"));
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.title").value("Updated Title"))
+                .andExpect(jsonPath("$.tags").isArray())
+                .andExpect(jsonPath("$.tags[0]").value("java"))
+                        .andExpect(jsonPath("$.tags[1]").value("spring"))
+                        .andExpect(jsonPath("$.likesCount").value(5))
+                        .andExpect(jsonPath("$.commentsCount").value(3));
+
+        verify(postService).save(any(Post.class));
     }
 
     @Test
-    void getPost_shouldReturnHtmlWithPostsByTag() throws Exception {
-        Post savedPost1 = postService.save(new Post("title1", "content1"));
-        Tag savedTag1 = tagService.save(new Tag("tag1"), savedPost1.getId());
-        tagService.save(new Tag("tag2"), savedPost1.getId());
+    void getPosts_shouldReturnPostList() throws Exception {
+        int page = 1;
+        int size = 10;
+        String search = "java";
 
-        Post savedPost2 = postService.save(new Post("title2", "content2"));
-        tagService.save(savedTag1, savedPost2.getId());
+        Post post1 = new Post("Test Post 1", "Content 1");
+        post1.setId(1L);
 
-        mockMvc.perform(get("/post").param("tag", "tag1"))
+        Post post2 = new Post("Test Post 2", "Content 2");
+        post2.setId(2L);
+
+        PostResponseDto responseDto1 = new PostResponseDto(
+                1L,
+                "Test Post 1",
+                "Content 1",
+                List.of("java"),
+                10,
+                5
+        );
+
+        PostResponseDto responseDto2 = new PostResponseDto(
+                2L,
+                "Test Post 2",
+                "Content 2",
+                List.of("spring"),
+                20,
+                8
+        );
+
+        when(postService.getPosts(eq(search), eq(page), eq(size))).thenReturn(List.of(post1, post2));
+        when(postService.count()).thenReturn(20L);
+        when(postMapper.toDto(post1)).thenReturn(responseDto1);
+        when(postMapper.toDto(post2)).thenReturn(responseDto2);
+
+        PaginationResult pagination = PaginationHelper.calculate(20L, size, page);
+
+        mockMvc.perform(get("/api/posts")
+                        .param("search", search)
+                        .param("pageNumber", String.valueOf(page))
+                        .param("pageSize", String.valueOf(size)))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("list-posts"))
-                .andExpect(model().attributeExists("postlist"))
-                .andExpect(xpath("//table/tbody/tr").nodeCount(2))
-                .andExpect(xpath("//table/tbody/tr[1]/td[1]").string("title1"))
-                .andExpect(xpath("//table/tbody/tr[1]/td[3]").string("content1"))
-                .andExpect(xpath("//table/tbody/tr[2]/td[1]").string("title2"))
-                .andExpect(xpath("//table/tbody/tr[2]/td[3]").string("content2"));
+                .andExpect(jsonPath("$.posts[0].id").value(1L))
+                .andExpect(jsonPath("$.posts[0].title").value("Test Post 1"))
+                .andExpect(jsonPath("$.posts[0].tags[0]").value("java"))
+                .andExpect(jsonPath("$.posts[0].likesCount").value(10))
+                .andExpect(jsonPath("$.posts[1].id").value(2L))
+                .andExpect(jsonPath("$.posts[1].title").value("Test Post 2"))
+                .andExpect(jsonPath("$.posts[1].tags[0]").value("spring"))
+                .andExpect(jsonPath("$.posts[1].likesCount").value(20))
+                .andExpect(jsonPath("$.hasPrev").value(pagination.isHasPrev()))
+                .andExpect(jsonPath("$.hasNext").value(pagination.isHasNext()))
+                .andExpect(jsonPath("$.lastPage").value(pagination.getLastPage()));
+
+        verify(postService).getPosts(eq(search), eq(page), eq(size));
+        verify(postService).count();
     }
 
     @Test
-    void getPost_shouldReturnHtmlWithPostById() throws Exception {
-        Post savedPost1 = postService.save(new Post("title1", "content1"));
+    void getPost_shouldReturnPostById() throws Exception {
+        Long postId = 1L;
 
-        tagService.save(new Tag("tag1"), savedPost1.getId());
-        tagService.save(new Tag("tag2"), savedPost1.getId());
+        Post post = new Post("Test Post", "Content");
+        post.setId(postId);
 
-        commentService.save(new Comment("comment1", savedPost1.getId()));
-        commentService.save(new Comment("comment2", savedPost1.getId()));
+        PostResponseDto responseDto = new PostResponseDto(
+                postId,
+                "Test Post",
+                "Content",
+                List.of("java", "spring"),
+                15,
+                7
+        );
 
-        mockMvc.perform(get("/post/" + savedPost1.getId()))
+        when(postService.findById(postId)).thenReturn(post);
+        when(postMapper.toDto(post)).thenReturn(responseDto);
+
+        mockMvc.perform(get("/api/posts/{id}", postId))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("post"))
-                .andExpect(model().attributeExists("comments"));
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.title").value("Test Post"))
+                .andExpect(jsonPath("$.tags").isArray())
+                .andExpect(jsonPath("$.tags[0]").value("java"))
+                .andExpect(jsonPath("$.tags[1]").value("spring"))
+                .andExpect(jsonPath("$.likesCount").value(15))
+                .andExpect(jsonPath("$.commentsCount").value(7));
+
+        verify(postService).findById(postId);
     }
 
     @Test
-    void delete_shouldRemovePostFromDatabaseAndRedirect() throws Exception {
-        Post savedPost = postService.save(new Post("title1", "content1"));
+    void deletePost_shouldDeletePost() throws Exception {
+        Long postId = 1L;
 
-        tagService.save(new Tag("tag1"), savedPost.getId());
-        tagService.save(new Tag("tag2"), savedPost.getId());
+        mockMvc.perform(delete("/api/posts/{id}", postId))
+                .andExpect(status().isOk());
 
-        commentService.save(new Comment("comment1", savedPost.getId()));
-        commentService.save(new Comment("comment2", savedPost.getId()));
-
-        mockMvc.perform(post("/post/" + savedPost
-                        .getId()).param("_method", "delete"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/post"));
-
-        List<Tag> tags = tagService.findAll();
-        Assertions.assertEquals(2, tags.size());
-
-        List<Comment> comments = commentService.findAll(0, 10);
-        Assertions.assertEquals(0, comments.size());
+        verify(postService).delete(postId);
     }
 }

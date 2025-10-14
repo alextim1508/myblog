@@ -17,7 +17,7 @@ public abstract class AbstractRepositoryImpl<T> implements AbstractRepository<T>
     public abstract String getTableName();
 
     @Override
-    public Optional<T> findById(Long id) {
+    public Optional<T> findById(long id) {
         String sql =
                 "SELECT * FROM " + getTableName() + " " +
                 "WHERE id = ?";
@@ -49,7 +49,7 @@ public abstract class AbstractRepositoryImpl<T> implements AbstractRepository<T>
     }
 
     @Override
-    public void deleteById(Long id) {
+    public void deleteById(long id) {
         String sql =
                 "DELETE FROM " + getTableName() + " " +
                 "WHERE id = ?";

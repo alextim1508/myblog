@@ -1,23 +1,17 @@
 package com.alextim.myblog.mapper;
 
-import com.alextim.myblog.dto.CommentDto;
-import com.alextim.myblog.dto.NewCommentDto;
+import com.alextim.myblog.dto.CommentResponseDto;
+import com.alextim.myblog.dto.CreateCommentRequestDto;
+import com.alextim.myblog.dto.UpdateCommentRequestDto;
 import com.alextim.myblog.model.Comment;
-import com.alextim.myblog.service.PostService;
 import org.mapstruct.Mapper;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public abstract class CommentMapper {
 
-    @Autowired
-    protected PostService postService;
+    public abstract CommentResponseDto toDto(Comment comment);
 
-    public abstract CommentDto toDto(Comment comment);
+    public abstract Comment toModel(CreateCommentRequestDto dto);
 
-    public abstract List<CommentDto> toDto(List<Comment> comments);
-
-    public abstract Comment toModel(NewCommentDto newCommentDto);
+    public abstract Comment toModel(UpdateCommentRequestDto dto);
 }

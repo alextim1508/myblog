@@ -19,11 +19,11 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 public class CommentServiceTest {
 
+    @Autowired
+    private CommentService service;
+
     @MockitoBean
     private CommentRepository repository;
-
-    @Autowired
-    private CommentServiceImpl service;
 
     @Test
     public void save_shouldCallSave() {

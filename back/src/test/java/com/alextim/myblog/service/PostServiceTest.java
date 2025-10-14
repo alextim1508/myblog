@@ -1,16 +1,19 @@
 package com.alextim.myblog.service;
 
 import com.alextim.myblog.model.Post;
+import com.alextim.myblog.model.Tag;
 import com.alextim.myblog.repository.PostRepository;
-import org.junit.jupiter.api.Assertions;
+import com.alextim.myblog.repository.TagRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,47 +21,37 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 public class PostServiceTest {
 
-    @MockitoBean
-    private PostRepository repository;
-
     @Autowired
-    private PostServiceImpl service;
+    private PostServiceImpl postService;
+
+    @MockitoBean
+    private PostRepository postRepository;
+    @MockitoBean
+    private TagRepository tagRepository;
 
     @Test
     public void save_shouldCallSave() {
         Post post = new Post("title", "content");
 
-        when(repository.save(any(Post.class))).thenReturn(post);
+        when(postRepository.save(any(Post.class))).thenReturn(post);
 
-        Post savedPost = service.save(post);
+        Post savedPost = postService.save(post);
 
-        verify(repository).save(savedPost);
-        Assertions.assertEquals(post, savedPost);
+        verify(postRepository).save(savedPost);
+        assertEquals(post, savedPost);
     }
+
 
     @Test
     public void findById_shouldCallFindById() {
         Post post = new Post("title", "content");
 
-        when(repository.findById(anyLong())).thenReturn(Optional.of(post));
+        when(postRepository.findById(anyLong())).thenReturn(Optional.of(post));
 
-        Post savedPost = service.findById(1L);
+        Post savedPost = postService.findById(1L);
 
-        verify(repository).findById(1L);
-        Assertions.assertEquals(post, savedPost);
-    }
-
-    @Test
-    public void findAll_shouldCallFindAllPostsWithTags() {
-        Post post1 = new Post("title1", "content");
-        Post post2 = new Post("title2", "content");
-
-        when(repository.findAllPostsWithTags(anyInt(), anyInt())).thenReturn(List.of(post1, post2));
-
-        List<Post> posts = service.findAll(0, 10);
-
-        verify(repository).findAllPostsWithTags(10, 0);
-        Assertions.assertEquals(posts, List.of(post1, post2));
+        verify(postRepository).findById(1L);
+        assertEquals(post, savedPost);
     }
 
     @Test
@@ -66,34 +59,133 @@ public class PostServiceTest {
         Post post1 = new Post("title1", "content");
         Post post2 = new Post("title2", "content");
 
-        when(repository.findByTagIds(anyList(), anyInt(), anyInt())).thenReturn(List.of(post1, post2));
+        when(postRepository.findByTagIds(anyList(), anyInt(), anyInt())).thenReturn(List.of(post1, post2));
 
-        List<Post> posts = service.findByTag(1L, 0, 10);
+        List<Post> posts = postService.findByTag(1L, 0, 10);
 
-        verify(repository).findByTagIds(List.of(1L), 10, 0);
-        Assertions.assertEquals(posts, List.of(post1, post2));
+        verify(postRepository).findByTagIds(List.of(1L), 10, 0);
+        assertEquals(posts, List.of(post1, post2));
     }
 
     @Test
     public void like_shouldIncrementLikeCounter() {
         Post post = new Post("title", "content");
-        post.setLikeCount(2);
+        post.setLikesCount(2);
 
-        when(repository.findById(anyLong())).thenReturn(Optional.of(post));
+        when(postRepository.findById(anyLong())).thenReturn(Optional.of(post));
 
-        when(repository.update(any(Post.class))).thenReturn(1);
+        when(postRepository.update(any(Post.class))).thenReturn(1);
 
-        Post likedPost = service.like(1L);
+        Post likedPost = postService.like(1L);
 
-        verify(repository).findById(1L);
-        verify(repository).update(post);
-        Assertions.assertEquals(3, likedPost.getLikeCount());
+        verify(postRepository).findById(1L);
+        verify(postRepository).update(post);
+        assertEquals(3, likedPost.getLikesCount());
     }
 
     @Test
     public void delete_shouldCallRepositoryDeleteComment() {
-        service.delete(1L);
+        postService.delete(1L);
 
-        verify(repository).deleteById(1L);
+        verify(postRepository).deleteById(1L);
+    }
+
+    @Test
+    void getPosts_shouldReturnPostsByTagWhenSearchStartsWithHash() {
+        String search = "#java";
+        int page = 1;
+        int size = 10;
+
+        Tag tag = new Tag("java");
+        tag.setId(1L);
+
+        Post post = new Post("title", "content");
+        post.setId(1L);
+
+        when(tagRepository.findTagByTitle("java")).thenReturn(Optional.of(tag));
+        when(postRepository.findByTagIds(List.of(1L), size, 0)).thenReturn(List.of(post));
+
+        List<Post> posts = postService.getPosts(search, page, size);
+
+        assertEquals(1, posts.size());
+        assertEquals(post, posts.get(0));
+    }
+
+    @Test
+    void getPosts_shouldReturnEmptyListWhenTagNotFound() {
+        String search = "#java";
+        int page = 1;
+        int size = 10;
+
+        when(tagRepository.findTagByTitle("java")).thenReturn(Optional.empty());
+
+        List<Post> posts = postService.getPosts(search, page, size);
+
+        assertEquals(0, posts.size());
+    }
+
+    @Test
+    void getPosts_shouldReturnPostsByTitleOrContentWhenSearchDoesNotStartWithHash() {
+        String search = "java";
+        int page = 1;
+        int size = 10;
+
+        Post post = new Post("title", "content");
+        post.setId(1L);
+
+        when(postRepository.findByTitleOrContent("java", size, 0)).thenReturn(List.of(post));
+
+        List<Post> posts = postService.getPosts(search, page, size);
+
+        assertEquals(1, posts.size());
+        assertEquals(post, posts.get(0));
+    }
+
+    @Test
+    void getPosts_shouldReturnAllPostsWhenSearchIsNull() {
+        String search = null;
+        int page = 1;
+        int size = 10;
+
+        Post post = new Post("title", "content");
+        post.setId(1L);
+
+        when(postRepository.findAll(size, 0)).thenReturn(List.of(post));
+
+        List<Post> posts = postService.getPosts(search, page, size);
+
+        assertEquals(1, posts.size());
+        assertEquals(post, posts.get(0));
+    }
+
+    @Test
+    void getPosts_shouldReturnAllPostsWhenSearchIsEmpty() {
+        String search = "";
+        int page = 1;
+        int size = 10;
+
+        Post post = new Post("title", "content");
+        post.setId(1L);
+
+        when(postRepository.findAll(size, 0)).thenReturn(List.of(post));
+
+        List<Post> posts = postService.getPosts(search, page, size);
+
+        assertEquals(1, posts.size());
+        assertEquals(post, posts.get(0));
+    }
+
+    @Test
+    void getPosts_shouldReturnEmptyListWhenNoPostsFound() {
+        String search = "java";
+        int page = 1;
+        int size = 10;
+
+        when(postRepository.findByTitleOrContent("java", size, 0)).thenReturn(Collections.emptyList());
+
+        List<Post> posts = postService.getPosts(search, page, size);
+
+        assertEquals(0, posts.size());
     }
 }
+

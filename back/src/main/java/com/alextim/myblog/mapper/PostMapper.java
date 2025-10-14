@@ -1,24 +1,20 @@
 package com.alextim.myblog.mapper;
 
-import com.alextim.myblog.dto.NewPostDto;
-import com.alextim.myblog.dto.PostDto;
-import com.alextim.myblog.dto.PostShortDto;
-import com.alextim.myblog.mapper.CommentMapper;
+import com.alextim.myblog.dto.CreatePostRequestDto;
+import com.alextim.myblog.dto.PostResponseDto;
+import com.alextim.myblog.dto.UpdatePostRequestDto;
 import com.alextim.myblog.model.Post;
 import com.alextim.myblog.model.Tag;
 import com.alextim.myblog.service.CommentService;
 import com.alextim.myblog.service.TagService;
 import com.alextim.myblog.service.TagServiceImpl;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-
 @Mapper(componentModel = "spring",
-        uses = {CommentMapper.class},
-        imports = {TagServiceImpl.class}
+        imports = {TagServiceImpl.class, Tag.class}
 )
 public abstract class PostMapper {
 
@@ -28,12 +24,21 @@ public abstract class PostMapper {
     @Autowired
     protected CommentService commentService;
 
-    @Mapping(target = "tags", expression = "java(tagService.save(newPostDto.tags))")
-    public abstract Post toModel(NewPostDto newPostDto);
+    @Mapping(target = "commentsCount", expression = "java(commentService.countByPostId(post.getId()))")
+    @Mapping(target = "tags", expression = "java(tagService.findTagsByPostId(post.getId()).stream().map(Tag::getTitle).toList())")
+    public abstract PostResponseDto toDto(Post post);
 
-    @Mapping(target = "tags", expression = "java(TagServiceImpl.tagsToString(post.getTags()))")
-    public abstract PostShortDto toShortDto(Post post);
+    public abstract Post toModel(CreatePostRequestDto dto);
 
-    @Mapping(target = "tags", expression = "java(TagServiceImpl.tagsToString(post.getTags()))")
-    public abstract PostDto toDto(Post post);
+    public abstract Post toModel(UpdatePostRequestDto dto);
+
+    @AfterMapping
+    public void saveTags(CreatePostRequestDto dto) {
+        tagService.save(dto.getTags());
+    }
+
+    @AfterMapping
+    public void saveTags(UpdatePostRequestDto dto) {
+        tagService.save(dto.getTags());
+    }
 }

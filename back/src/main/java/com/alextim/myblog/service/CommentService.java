@@ -15,6 +15,8 @@ public interface CommentService {
 
     List<Comment> findAll(int page, int size);
 
+    List<Comment> findByPostId(long postId);
+
     void deleteByPostId(long id);
 
     void deleteById(long id);

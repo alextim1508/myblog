@@ -8,17 +8,19 @@ import java.util.Set;
 
 public interface TagService {
 
-    Tag save(Tag tag, Long postId);
+    Tag save(Tag tag, long postId);
 
-    Set<Tag> save(String content);
+    List<Tag> save(List<String> tagTitles);
 
     Optional<Tag> findTagByTitle(String title);
 
-    Set<Tag> findTagsByTitles(Set<String> titles);
-
     List<Tag> findAll();
+
+    List<Tag> findTagsByTitles(List<String> titles);
+
+    List<Tag> findTagsByPostId(long postId);
 
     void deleteById(long id);
 
-    void deleteRelationshipByTagId(long id);
+    void deleteRelationshipByPostId(long id);
 }
