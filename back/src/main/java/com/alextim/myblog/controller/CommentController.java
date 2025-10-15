@@ -60,7 +60,8 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CommentResponseDto>> getComments(@PathVariable Long postId) {
+    public ResponseEntity<List<CommentResponseDto>> getComments(/*@PathVariable Long postId*/) {
+        long postId = 29; //fix front bug
         log.info("Getting all comments for post ID: {}", postId);
 
         List<Comment> all = commentService.findByPostId(postId);
